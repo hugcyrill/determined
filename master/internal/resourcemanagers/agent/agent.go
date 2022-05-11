@@ -503,7 +503,6 @@ func (a *agent) containerStateChanged(ctx *actor.Context, sc aproto.ContainerSta
 		}
 		return
 	}
-	check.Panic(check.True(ok, "container not allocated to agent: container %s", sc.Container.ID))
 
 	switch sc.Container.State {
 	case cproto.Running:

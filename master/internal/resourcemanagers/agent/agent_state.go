@@ -256,6 +256,7 @@ func (a *AgentState) agentStarted(ctx *actor.Context, agentStarted *aproto.Agent
 }
 
 func (a *AgentState) containerStateChanged(ctx *actor.Context, msg aproto.ContainerStateChanged) {
+	ctx.Log().Debugf("containerStateChanged", msg.Container, *a.containerState[msg.Container.ID])
 	for _, d := range msg.Container.Devices {
 		s, ok := a.slotStates[d.ID]
 		if !ok {
@@ -264,12 +265,15 @@ func (a *AgentState) containerStateChanged(ctx *actor.Context, msg aproto.Contai
 		}
 
 		s.containerID = &msg.Container.ID
-		a.containerState[msg.Container.ID] = &msg.Container
 
 		if msg.Container.State == cproto.Terminated {
 			s.containerID = nil
-			delete(a.containerState, msg.Container.ID)
 		}
+	}
+
+	a.containerState[msg.Container.ID] = &msg.Container
+	if msg.Container.State == cproto.Terminated {
+		delete(a.containerState, msg.Container.ID)
 	}
 
 	if err := a.persist(); err != nil {
