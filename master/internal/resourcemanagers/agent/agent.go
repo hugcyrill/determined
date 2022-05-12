@@ -516,10 +516,7 @@ func (a *agent) containerStateChanged(ctx *actor.Context, sc aproto.ContainerSta
 		delete(a.agentState.containerAllocation, sc.Container.ID)
 	}
 
-	resourceStateChanged := sproto.FromContainerStateChanged(sc)
-	if resourceStateChanged.Container != nil {
-	}
-	ctx.Tell(taskActor, resourceStateChanged)
+	ctx.Tell(taskActor, sproto.FromContainerStateChanged(sc))
 	a.agentState.containerStateChanged(ctx, sc)
 }
 
