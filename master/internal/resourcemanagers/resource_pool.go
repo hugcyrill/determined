@@ -145,11 +145,10 @@ func (rp *ResourcePool) allocateRequest(ctx *actor.Context, msg sproto.AllocateR
 				errMsg = err.Error()
 			}
 
-			exitCode := sproto.ExitCode(-9)
 			rf := sproto.ResourcesFailure{
 				FailureType: sproto.RestoreError,
 				ErrMsg:      errMsg,
-				ExitCode:    &exitCode,
+				ExitCode:    nil,
 			}
 			ctx.Tell(msg.TaskActor, rf)
 

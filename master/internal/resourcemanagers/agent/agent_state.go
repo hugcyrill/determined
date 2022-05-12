@@ -428,12 +428,14 @@ func (a *AgentState) snapshot() *AgentSnapshot {
 	containerIds := maps.Keys(a.containerState)
 
 	s := AgentSnapshot{
-		AgentID:               a.agentID(),
-		UUID:                  a.uuid.String(),
-		ResourcePoolName:      a.resourcePoolName,
-		Label:                 a.Label,
-		UserEnabled:           a.enabled,  // TODO(ilia): save user setting
-		UserDraining:          a.draining, // TODO(ilia): save user setting
+		AgentID:          a.agentID(),
+		UUID:             a.uuid.String(),
+		ResourcePoolName: a.resourcePoolName,
+		Label:            a.Label,
+		// TODO(ilia): we need to disambiguate user setting (which needs to be saved)
+		// vs current state.
+		UserEnabled:           a.enabled,
+		UserDraining:          a.draining,
 		MaxZeroSlotContainers: a.maxZeroSlotContainers,
 		Slots:                 slotData,
 		Containers:            containerIds,
@@ -577,9 +579,9 @@ func newAgentStateFromSnapshot(as AgentSnapshot) (*AgentState, error) {
 			containerID: sd.ContainerID,
 			enabled: slotEnabled{
 				deviceAdded:  true,
-				agentEnabled: as.UserEnabled,  // TODO
-				userEnabled:  as.UserEnabled,  // TODO
-				draining:     as.UserDraining, // TODO
+				agentEnabled: as.UserEnabled,
+				userEnabled:  as.UserEnabled,
+				draining:     as.UserDraining,
 			},
 		}
 		if sd.ContainerID != nil {
@@ -631,8 +633,8 @@ func (a *AgentState) restoreContainersField() error {
 	}
 
 	containers := make(map[cproto.ID]*actor.Ref)
-	for contID := range c2a {
-		ref := task.GetAllocation(c2a[contID])
+	for contID, alloc := range c2a {
+		ref := task.GetAllocation(alloc)
 		if ref != nil {
 			containers[contID] = ref
 		}
