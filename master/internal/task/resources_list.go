@@ -55,6 +55,8 @@ func WipeResourcesState() error {
 
 // CleanupResourcesState deletes resources for all closed allocations.
 func CleanupResourcesState() error {
+	// Potentially this may become expensive, however this is a subquery,
+	// not materialized in master, and this function only runs once on master startup.
 	closedAllocations := db.Bun().NewSelect().Model((*model.Allocation)(nil)).
 		Where("end_time IS NOT NULL").
 		Column("allocation_id")

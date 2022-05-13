@@ -444,6 +444,7 @@ func (a *agent) handleIncomingWSMessage(ctx *actor.Context, msg aproto.MasterMes
 			ctx.Log().WithField("container-id", containerID).Warnf(
 				"received ContainerLog from container not allocated to agent: "+
 					"container %s, message: %v", containerID, msg.ContainerLog)
+			return
 		}
 		ctx.Tell(ref, sproto.ContainerLog{
 			Container:   msg.ContainerLog.Container,
@@ -574,24 +575,27 @@ func (a *agent) handleContainersReattached(
 	recovered := map[cproto.ID]aproto.ContainerReattachAck{}
 
 	for _, containerRestored := range agentStarted.ContainersReattached {
-		if containerRestored.Failure == nil {
-			cid := containerRestored.Container.ID
-			_, ok := a.agentState.containerAllocation[cid]
-
-			if ok {
-				if a.agentState.containerState[cid].State == containerRestored.Container.State {
-					recovered[cid] = containerRestored
-				} else {
-					ctx.Log().Warnf(
-						"reattached container %s has changed state: %s to %s",
-						cid, a.agentState.containerState[cid].State,
-						containerRestored.Container.State)
-				}
-			}
-		} else {
+		if containerRestored.Failure != nil {
 			ctx.Log().Infof(
 				"agent failed to restore container: %v: %v",
 				containerRestored.Container.ID, containerRestored.Failure.ErrMsg)
+			continue
+		}
+
+		cid := containerRestored.Container.ID
+		_, ok := a.agentState.containerAllocation[cid]
+
+		if !ok {
+			continue
+		}
+
+		if a.agentState.containerState[cid].State == containerRestored.Container.State {
+			recovered[cid] = containerRestored
+		} else {
+			ctx.Log().Warnf(
+				"reattached container %s has changed state: %s to %s",
+				cid, a.agentState.containerState[cid].State,
+				containerRestored.Container.State)
 		}
 	}
 

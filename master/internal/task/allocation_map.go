@@ -38,8 +38,8 @@ func RegisterAllocation(allocationID model.AllocationID, ref *actor.Ref) {
 	allocationMap[allocationID] = ref
 }
 
-// DeregisterAllocation deletes an allocation from the map.
-func DeregisterAllocation(allocationID model.AllocationID) {
+// UnregisterAllocation deletes an allocation from the map.
+func UnregisterAllocation(allocationID model.AllocationID) {
 	allocationMapMutex.Lock()
 	defer allocationMapMutex.Unlock()
 	delete(allocationMap, allocationID)

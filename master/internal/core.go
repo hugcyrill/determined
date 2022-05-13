@@ -565,6 +565,18 @@ func (m *Master) tryRestoreExperiment(sema chan struct{}, wg *sync.WaitGroup, e 
 	}
 }
 
+// Zero-downtime restore of task containers works the following way. On master startup,
+// 1. AgentRM is initialized.
+// 2. In AgentRM PreStart, agent state is fetched from database and agent actors are initialized.
+// 3. Restored experiment actors ping their restored trials to ensure they've initialized.
+// 4. The trial actors similarly ping allocations.
+// 5. Waitgroup waits for all on experiments.
+// 6. Allocation actors ask AgentRM for resources. Since AgentRM has already initialized
+//    the agent states in PreStart, it knows which containers it's supposed to have. If it does not
+//    have the required containers, allocation will receive a ResourcesFailure.
+// 7. When real agents finally connect, if the container is not on the agent, the restored
+//    allocation will get a containerStateChanged event notifying it about container termination.
+//
 // TODO(ilia): Here we wait for all experiments to restore and initialize their allocations before
 // starting any scheduling. This path is better for scheduling fairness.
 // Alternatively, we could wait for experiments with restorable allocations only.
@@ -575,8 +587,6 @@ func (m *Master) restoreNonTerminalExperiments() error {
 	// This has avoided resource exhaustion in the past (on the db connection pool) and probably is
 	// good still to avoid overwhelming us on restart after a crash.
 	sema := make(chan struct{}, maxConcurrentRestores)
-	m.system.ActorOf(actor.Addr("experiments"), &actors.Group{})
-	m.system.ActorOf(job.JobsActorAddr, job.NewJobs(sproto.GetCurrentRM(m.system)))
 	toRestore, err := m.db.NonTerminalExperiments()
 	if err != nil {
 		return errors.Wrap(err, "couldn't retrieve experiments to restore")
@@ -855,6 +865,9 @@ func (m *Master) Run(ctx context.Context) error {
 	// Distributed lock server.
 	rwCoordinator := newRWCoordinator()
 	m.rwCoordinator, _ = m.system.ActorOf(actor.Addr("rwCoordinator"), rwCoordinator)
+
+	m.system.ActorOf(actor.Addr("experiments"), &actors.Group{})
+	m.system.ActorOf(job.JobsActorAddr, job.NewJobs(sproto.GetCurrentRM(m.system)))
 
 	if err = m.restoreNonTerminalExperiments(); err != nil {
 		return err

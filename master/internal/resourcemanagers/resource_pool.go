@@ -131,8 +131,8 @@ func (rp *ResourcePool) allocateRequest(ctx *actor.Context, msg sproto.AllocateR
 	}
 
 	if msg.Restore {
-		succ, err := rp.restoreResources(ctx, &msg)
-		if err != nil || !succ {
+		err := rp.restoreResources(ctx, &msg)
+		if err != nil {
 			if err != nil {
 				log.WithError(err).Error("error restoring resources")
 			} else {
@@ -145,7 +145,7 @@ func (rp *ResourcePool) allocateRequest(ctx *actor.Context, msg sproto.AllocateR
 				errMsg = err.Error()
 			}
 
-			rf := sproto.ResourcesFailure{
+			rf := sproto.RestoreResourcesFailure{
 				FailureType: sproto.RestoreError,
 				ErrMsg:      errMsg,
 				ExitCode:    nil,
@@ -160,7 +160,7 @@ func (rp *ResourcePool) allocateRequest(ctx *actor.Context, msg sproto.AllocateR
 }
 
 func (rp *ResourcePool) restoreResources(
-	ctx *actor.Context, req *sproto.AllocateRequest) (bool, error) {
+	ctx *actor.Context, req *sproto.AllocateRequest) error {
 	rp.agentStatesCache = rp.fetchAgentStates(ctx)
 	defer func() {
 		rp.agentStatesCache = nil
@@ -177,11 +177,11 @@ func (rp *ResourcePool) restoreResources(
 		Where("resource_id in (?)", subq).
 		Scan(context.TODO())
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	if len(containerSnapshots) == 0 {
-		return false, errors.New("0 container snapshots")
+		return errors.New("0 container snapshots")
 	}
 
 	resources := make([]sproto.Resources, 0, len(containerSnapshots))
@@ -195,7 +195,7 @@ func (rp *ResourcePool) restoreResources(
 	for _, cs := range containerSnapshots {
 		agentState, ok := agentStateMap[cs.AgentID]
 		if !ok {
-			return false, errors.New(fmt.Sprintf("can't find restorable agent %s", cs.AgentID))
+			return errors.New(fmt.Sprintf("can't find restorable agent %s", cs.AgentID))
 		}
 
 		cr := containerResources{
@@ -218,7 +218,7 @@ func (rp *ResourcePool) restoreResources(
 	rp.taskList.SetAllocations(req.TaskActor, &allocated)
 	ctx.Tell(req.TaskActor, allocated)
 
-	return true, nil
+	return nil
 }
 
 func (rp *ResourcePool) receiveSetTaskName(ctx *actor.Context, msg sproto.SetTaskName) {

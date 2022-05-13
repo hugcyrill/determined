@@ -32,7 +32,7 @@ import (
 func TestAllocation(t *testing.T) {
 	cases := []struct {
 		name  string
-		err   *sproto.ResourcesFailure
+		err   *sproto.RestoreResourcesFailure
 		acked bool
 		exit  *AllocationExited
 	}{
@@ -49,13 +49,13 @@ func TestAllocation(t *testing.T) {
 		{
 			name:  "container failed",
 			acked: false,
-			err:   &sproto.ResourcesFailure{FailureType: sproto.ContainerFailed},
-			exit:  &AllocationExited{Err: sproto.ResourcesFailure{FailureType: sproto.ContainerFailed}},
+			err:   &sproto.RestoreResourcesFailure{FailureType: sproto.ContainerFailed},
+			exit:  &AllocationExited{Err: sproto.RestoreResourcesFailure{FailureType: sproto.ContainerFailed}},
 		},
 		{
 			name:  "container failed, but acked preemption",
 			acked: true,
-			err:   &sproto.ResourcesFailure{FailureType: sproto.ContainerFailed},
+			err:   &sproto.RestoreResourcesFailure{FailureType: sproto.ContainerFailed},
 			exit:  &AllocationExited{},
 		},
 	}
