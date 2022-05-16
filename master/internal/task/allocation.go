@@ -590,7 +590,8 @@ func (a *Allocation) ResourcesStateChanged(
 }
 
 // RestoreResourceFailure handles the restored resource failures.
-func (a *Allocation) RestoreResourceFailure(ctx *actor.Context, msg sproto.RestoreResourcesFailure) {
+func (a *Allocation) RestoreResourceFailure(
+	ctx *actor.Context, msg sproto.RestoreResourcesFailure) {
 	ctx.Log().Debugf("allocation resource failure")
 	a.setMostProgressedModelState(model.AllocationStateTerminating)
 

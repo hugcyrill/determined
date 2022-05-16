@@ -584,19 +584,19 @@ func (a *agent) handleContainersReattached(
 
 		cid := containerRestored.Container.ID
 		_, ok := a.agentState.containerAllocation[cid]
-
 		if !ok {
 			continue
 		}
 
-		if a.agentState.containerState[cid].State == containerRestored.Container.State {
-			recovered[cid] = containerRestored
-		} else {
+		if a.agentState.containerState[cid].State != containerRestored.Container.State {
 			ctx.Log().Warnf(
 				"reattached container %s has changed state: %s to %s",
 				cid, a.agentState.containerState[cid].State,
 				containerRestored.Container.State)
+			continue
 		}
+
+		recovered[cid] = containerRestored
 	}
 
 	// Mark the rest as dead.

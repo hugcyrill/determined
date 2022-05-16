@@ -143,7 +143,8 @@ type RestoreResourcesFailure struct {
 }
 
 // NewResourcesFailure returns a resources failure message wrapping the type, msg and exit code.
-func NewResourcesFailure(failureType FailureType, msg string, code *ExitCode) *RestoreResourcesFailure {
+func NewResourcesFailure(
+	failureType FailureType, msg string, code *ExitCode) *RestoreResourcesFailure {
 	return &RestoreResourcesFailure{
 		FailureType: failureType,
 		ErrMsg:      msg,
